@@ -503,4 +503,3 @@ JOIN vj_volov.flight_airport_info f ON tf.flight_id = f.flight_id
 LEFT JOIN vj_volov.boarding_passes bp ON t.ticket_no = bp.ticket_no AND f.flight_id = bp.flight_id
 WHERE f.scheduled_departure >= '2016-01-01'
 AND f.status = 'Arrived';
-
