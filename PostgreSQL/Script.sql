@@ -471,31 +471,31 @@ CALL vj_volov.load_bookings_json();
 В запросе используйте view flight_airport_info и таблицы ticket_flights, tickets, bookings, boarding_passes. Добавьте все поля из перечисленных таблиц.
 Результат положите в виде таблицы с названием fct_flights в свою схему.
 
--- Создание таблицы фактов для аналитики
+-- Удаление и создание финальной таблицы
 DROP TABLE IF EXISTS vj_volov.fct_flights CASCADE;
 CREATE TABLE vj_volov.fct_flights AS
 SELECT 
-    b.book_ref,
-    b.book_date,
-    b.total_amount,
-    f.flight_no,
     f.flight_id,
+    f.flight_no,
     f.scheduled_departure,
     f.scheduled_arrival,
+    f.departure_airport,
+    f.arrival_airport,
+    f.status,
     f.aircraft_code,
     f.actual_departure,
     f.actual_arrival,
-    f.status,
     tf.fare_conditions,
     tf.amount,
     t.ticket_no,
+    b.book_ref,
     t.passenger_id,
     t.passenger_name,
     t.contact_data,
+    b.book_date,
+    b.total_amount,
     bp.boarding_no,
-    bp.seat_no,
-    bp.row,
-    bp.seat
+    bp.seat_no
 FROM vj_volov.bookings b
 JOIN vj_volov.tickets t ON b.book_ref = t.book_ref
 JOIN vj_volov.ticket_flights tf ON t.ticket_no = tf.ticket_no
@@ -503,3 +503,130 @@ JOIN vj_volov.flight_airport_info f ON tf.flight_id = f.flight_id
 LEFT JOIN vj_volov.boarding_passes bp ON t.ticket_no = bp.ticket_no AND f.flight_id = bp.flight_id
 WHERE f.scheduled_departure >= '2016-01-01'
 AND f.status = 'Arrived';
+
+select * from vj_volov.fct_flights limit 5
+
+
+
+
+
+Создание отчёта с помощью cube
+С использованием cube создайте отчет flight_report
+Поля departure_airport и arrival_airport для указания аэропортов отправления и прибытия
+Поле fare_conditions для отображения условий тарифа
+Поле, вычисляющее суммарный доход по каждому набору значений полей departure_airport, arrival_airport и fare_conditions
+Поле, вычисляющее количество рейсов для каждой комбинации значений в группировке
+
+-- Создание отчета с использованием CUBE
+CREATE TABLE flight_report AS
+SELECT 
+    departure_airport,
+    arrival_airport,
+    fare_conditions,
+    SUM(amount) as total_revenue,
+    COUNT(*) as flight_count
+FROM vj_volov.fct_flights
+GROUP BY CUBE(departure_airport, arrival_airport, fare_conditions)
+ORDER BY departure_airport, arrival_airport, fare_conditions;
+
+
+
+
+
+Оптимизация с помощью партиций
+К созданной витрине часто обращаются с запросами, содержащими дату полета.
+Создайте таблицу fct_flight_part, которая будет партицирована по месяцам scheduled_departure
+Все партиции называйте в формате <название_таблицы>_год_месяц. Например, fct_flight_part_2016_01.
+
+-- Создание родительской таблицы для партиционирования
+CREATE TABLE fct_flight_part (
+    flight_id integer,
+    flight_no character,
+    scheduled_departure timestamp with time zone,
+    scheduled_arrival timestamp with time zone,
+    departure_airport character,
+    arrival_airport character,
+    status character varying,
+    aircraft_code character,
+    actual_departure timestamp with time zone,
+    actual_arrival timestamp with time zone,
+    fare_conditions character varying,
+    amount numeric,
+    ticket_no character,
+    book_ref character,
+    passenger_id character varying,
+    passenger_name text,
+    contact_data jsonb,
+    book_date timestamp with time zone,
+    total_amount numeric,
+    boarding_no integer,
+    seat_no character varying
+) PARTITION BY RANGE (scheduled_departure);
+-- Создание партиций для каждого месяца
+-- Пример для 2016 года (вы можете адаптировать под нужные даты)
+CREATE TABLE fct_flight_part_2016_01 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-01-01') TO ('2016-02-01');
+
+CREATE TABLE fct_flight_part_2016_02 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-02-01') TO ('2016-03-01');
+
+CREATE TABLE fct_flight_part_2016_03 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-03-01') TO ('2016-04-01');
+
+CREATE TABLE fct_flight_part_2016_04 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-04-01') TO ('2016-05-01');
+
+CREATE TABLE fct_flight_part_2016_05 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-05-01') TO ('2016-06-01');
+
+CREATE TABLE fct_flight_part_2016_06 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-06-01') TO ('2016-07-01');
+
+CREATE TABLE fct_flight_part_2016_07 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-07-01') TO ('2016-08-01');
+
+CREATE TABLE fct_flight_part_2016_08 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-08-01') TO ('2016-09-01');
+
+CREATE TABLE fct_flight_part_2016_09 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-09-01') TO ('2016-10-01');
+
+CREATE TABLE fct_flight_part_2016_10 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-10-01') TO ('2016-11-01');
+
+CREATE TABLE fct_flight_part_2016_11 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-11-01') TO ('2016-12-01');
+
+CREATE TABLE fct_flight_part_2016_12 PARTITION OF fct_flight_part
+FOR VALUES FROM ('2016-12-01') TO ('2017-01-01');
+
+
+
+
+
+Оптимизация с помощью индексов
+К созданной витрине часто обращаются с запросами, описанными ниже:
+SELECT * FROM fct_flight_part WHERE ticket_no=XXX
+SELECT * FROM fct_flight_part WHERE book_ref = XXX
+SELECT * FROM fct_flight_part WHERE departure_airport = YYY AND arrival_airport= XXX
+Создайте индексы, которые повысят производительность этих запросов, и проверьте, что запросы стали выполняться быстрее.
+Индексы называйте в формате: 
+idx_<название_таблицы>_<название поля>
+
+-- Индекс для поиска по ticket_no
+CREATE INDEX idx_fct_flight_part_ticket_no ON fct_flight_part (ticket_no);
+-- Индекс для поиска по book_ref
+CREATE INDEX idx_fct_flight_part_book_ref ON fct_flight_part (book_ref);
+-- Индекс для поиска по паре аэропортов
+CREATE INDEX idx_fct_flight_part_airports ON fct_flight_part (departure_airport, arrival_airport);
+-- Проверка
+EXPLAIN ANALYZE
+SELECT * FROM fct_flight_part WHERE ticket_no = '0005433098850';
+-- Проверка
+EXPLAIN ANALYZE
+SELECT * FROM fct_flight_part WHERE book_ref = '7D9FFF';
+-- Проверка
+EXPLAIN ANALYZE
+SELECT * FROM fct_flight_part WHERE departure_airport = 'SLY' AND arrival_airport = 'OVB';
+
+
