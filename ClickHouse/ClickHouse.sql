@@ -61,36 +61,62 @@ ENGINE = PostgreSQL(
 );
 
 
+Создайте таблицу flights c типом mergetree и партицией по месяцам запланированной даты вылета
+Заполните ее из flights_remote
 
-
-CREATE TABLE user_profiles
+CREATE TABLE startde_student_data.vj_volov_flights
 (
-    user_id UInt32,                 -- Идентификатор пользователя
-    name String,                    -- Имя пользователя
-    email String,                   -- Электронная почта
-    last_updated DateTime,          -- Время последнего обновления записи
-    version UInt32                  -- Версия записи (опционально, для замены на                                              основании версии)
+    `flight_id` UInt32,
+    `flight_no` String,
+    `scheduled_departure` DateTime,
+    `scheduled_arrival` DateTime,
+    `departure_airport` String,
+    `arrival_airport` String,
+    `status` String,
+    `aircraft_code` String,
+    `actual_departure` Nullable(DateTime),
+    `actual_arrival` Nullable(DateTime)
 )
-ENGINE = ReplacingMergeTree(version)  -- Используем движок ReplacingMergeTree с заменой по полю version
-PARTITION BY toYYYYMM(last_updated)   -- Партиционирование по дате последнего                                                    обновления
-ORDER BY user_id                      -- Индексация по идентификатору пользователя
-PRIMARY KEY user_id                   -- Первичный ключ по user_id
-SETTINGS index_granularity = 8192;    -- Размер индекса
+ENGINE = MergeTree
+PARTITION BY toYYYYMM(scheduled_departure)
+ORDER BY (flight_id)
+SETTINGS index_granularity = 8192;
 
+--Загрузка данные
+INSERT INTO startde_student_data.vj_volov_flights
+SELECT *
+FROM startde_student_data.vj_volov_flights_remote;
 
+--Проверка: сколько строк загружено
+SELECT count(*) AS row_count
+FROM startde_student_data.vj_volov_flights;
+--214867
 
+--Проверка партиций
+SELECT 
+    partition,
+    sum(rows) AS rows_in_partition
+FROM system.parts 
+WHERE database = 'startde_student_data' 
+  AND table = 'vj_volov_flights'
+GROUP BY partition
+ORDER BY partition;
 
-INSERT INTO user_profiles (user_id, name, email, last_updated, version)
-VALUES 
-(1, 'Alice', 'alice@example.com', now(), 1),
-(2, 'Bob', 'bob@example.com', now(), 1),
-(3, 'Charlie', 'charlie@example.com', now(), 1);
-
-INSERT INTO user_profiles (user_id, name, email, last_updated, version)
-VALUES 
-(1, 'Alice Cooper', 'alice@example.com', now(), 2);
-
-SELECT * FROM user_profiles FINAL;
+--partition	rows_in_partition
+--201510	9780
+--201511	16254
+--201512	16831
+--201601	16783
+--201602	15760
+--201603	16831
+--201604	16289
+--201605	16811
+--201606	16274
+--201607	16783
+--201608	16853
+--201609	16286
+--201610	16803
+--201611	6529
 
 
 
