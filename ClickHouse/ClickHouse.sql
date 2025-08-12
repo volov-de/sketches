@@ -36,9 +36,9 @@ WHERE
 Нам поручили загрузить данные о перелетах из PG и сделать по ним агрегационную таблицу для аналитиков.
 Вам необходимо настроить интеграцию с PG. Создайте репликационный движок к таблице flights, назовите ее flights_remote
 
-DROP TABLE startde_student_data.vj_volov_flights_remote;
+DROP TABLE vj_volov_flights_remote;
 
-CREATE TABLE startde_student_data.vj_volov_flights_remote
+CREATE TABLE vj_volov_flights_remote
 (
     `flight_id` UInt32,
     `flight_no` String,
@@ -64,7 +64,7 @@ ENGINE = PostgreSQL(
 Создайте таблицу flights c типом mergetree и партицией по месяцам запланированной даты вылета
 Заполните ее из flights_remote
 
-CREATE TABLE startde_student_data.vj_volov_flights
+CREATE TABLE vj_volov_flights
 (
     `flight_id` UInt32,
     `flight_no` String,
@@ -83,13 +83,13 @@ ORDER BY (flight_id)
 SETTINGS index_granularity = 8192;
 
 --Загрузка данные
-INSERT INTO startde_student_data.vj_volov_flights
+INSERT INTO vj_volov_flights
 SELECT *
-FROM startde_student_data.vj_volov_flights_remote;
+FROM vj_volov_flights_remote;
 
 --Проверка: сколько строк загружено
 SELECT count(*) AS row_count
-FROM startde_student_data.vj_volov_flights;
+FROM vj_volov_flights;
 --214867
 
 --Проверка партиций
