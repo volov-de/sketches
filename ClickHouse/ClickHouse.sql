@@ -1,21 +1,19 @@
 В каком месяце 2016 года больше перелетов с билетами бизнес класса? 
 
-Июль
-
 SELECT 
     toMonth(scheduled_departure) AS month,
     count(*) AS flight_count
 FROM 
-    startde.flights AS f
+    flights AS f
 JOIN 
-    startde.seats AS s ON s.aircraft_code = f.aircraft_code
+    seats AS s ON s.aircraft_code = f.aircraft_code
 WHERE 
    actual_departure - scheduled_departure >
 GROUP BY 
     month
 ORDER BY 
     flight_count DESC
-
+Ответ: Июль
 
     
 У скольких пассажиров рейс был задержан более чем на 3 часа?
@@ -52,12 +50,12 @@ CREATE TABLE vj_volov_flights_remote
     `actual_arrival` Nullable(DateTime)
 )
 ENGINE = PostgreSQL(
-    'host:5432', -- хост:порт
-    'demo',                                 -- база
-    'flights',                              -- таблица в Postgres
-    'vj_volov',                             -- пользователь
-    'pass', -- пароль
-    'bookings'                              -- схема
+    'host:5432', 
+    'demo',
+    'flights',
+    'vj_volov',
+    'pass',
+    'bookings'
 );
 
 
@@ -97,7 +95,7 @@ SELECT
     partition,
     sum(rows) AS rows_in_partition
 FROM system.parts 
-WHERE database = 'startde_student_data' 
+WHERE database = 'student_data' 
   AND table = 'vj_volov_flights'
 GROUP BY partition
 ORDER BY partition;
@@ -124,7 +122,7 @@ ORDER BY partition;
 и количество вылетов с опозданием (delayed_flights). 
 Назовите ее flights_aggregates
 
-CREATE TABLE startde_student_data.vj_volov_airports
+CREATE TABLE student_data.vj_volov_airports
 (
     airport_code String,
     airport_name String,
@@ -136,10 +134,10 @@ CREATE TABLE startde_student_data.vj_volov_airports
 ENGINE = MergeTree
 ORDER BY airport_code;
 
-INSERT INTO startde_student_data.vj_volov_airports
+INSERT INTO student_data.vj_volov_airports
 SELECT *
 FROM postgresql(
-    'startde.postgres.karpov.courses:5432',
+    'postgres.karpov.courses:5432',
     'demo',
     'airports',
     'vj_volov',
@@ -148,10 +146,10 @@ FROM postgresql(
 );
 
 --Проверка
-SELECT * FROM startde_student_data.vj_volov_airports LIMIT 5;
+SELECT * FROM student_data.vj_volov_airports LIMIT 5;
 
 
-CREATE TABLE startde_student_data.vj_volov_flights_aggregates
+CREATE TABLE student_data.vj_volov_flights_aggregates
 (
     departure_airport String,
     total_flights UInt64,
@@ -161,7 +159,7 @@ ENGINE = SummingMergeTree
 ORDER BY (departure_airport)
 SETTINGS index_granularity = 8192;
 
-INSERT INTO startde_student_data.vj_volov_flights_aggregates
+INSERT INTO student_data.vj_volov_flights_aggregates
 SELECT
     f.departure_airport,
     COUNT(*) AS total_flights,
@@ -169,10 +167,10 @@ SELECT
         WHEN f.actual_departure > f.scheduled_departure THEN 1 
         ELSE 0 
     END) AS delayed_flights
-FROM startde_student_data.vj_volov_flights f
+FROM student_data.vj_volov_flights f
 GROUP BY f.departure_airport;
 
-select * from startde_student_data.vj_volov_flights_aggregates
+select * from student_data.vj_volov_flights_aggregates
 
 --departure_airport, total_flights, delayed_flights
 --AAQ	849	751
@@ -193,7 +191,7 @@ arrival_airport — код аэропорта прилета
 aircraft_code — код самолета
 duration — продолжительность полета, которая будет рассчитана как разница между запланированными временами вылета и прилета
 
-CREATE TABLE startde_student_data.vj_volov_routes_storage
+CREATE TABLE student_data.vj_volov_routes_storage
 (
     flight_no String,
     departure_airport String,
@@ -204,8 +202,8 @@ CREATE TABLE startde_student_data.vj_volov_routes_storage
 ENGINE = ReplacingMergeTree  -- чтобы при дублях оставалась последняя строка
 ORDER BY flight_no;
 
-CREATE MATERIALIZED VIEW startde_student_data.vj_volov_routes
-TO startde_student_data.vj_volov_routes_storage
+CREATE MATERIALIZED VIEW student_data.vj_volov_routes
+TO student_data.vj_volov_routes_storage
 AS
 SELECT
     flight_no,
@@ -213,22 +211,22 @@ SELECT
     any(arrival_airport) AS arrival_airport,
     any(aircraft_code) AS aircraft_code,
     any(toUInt32(scheduled_arrival - scheduled_departure)) AS duration
-FROM startde_student_data.vj_volov_flights
+FROM student_data.vj_volov_flights
 GROUP BY flight_no;
 
 -- Создаём бэкап
-CREATE TABLE IF NOT EXISTS startde_student_data.vj_volov_flights_backup
+CREATE TABLE IF NOT EXISTS student_data.vj_volov_flights_backup
 ENGINE = MergeTree ORDER BY flight_id
-AS SELECT * FROM startde_student_data.vj_volov_flights;
+AS SELECT * FROM student_data.vj_volov_flights;
 
 -- Очищаем
-TRUNCATE TABLE startde_student_data.vj_volov_flights;
+TRUNCATE TABLE student_data.vj_volov_flights;
 
 -- Вставляем обратно — сработает MV
-INSERT INTO startde_student_data.vj_volov_flights
-SELECT * FROM startde_student_data.vj_volov_flights_backup;
+INSERT INTO student_data.vj_volov_flights
+SELECT * FROM student_data.vj_volov_flights_backup;
 
-SELECT * FROM startde_student_data.vj_volov_routes_storage limit 5;
+SELECT * FROM student_data.vj_volov_routes_storage limit 5;
 
 --PG0001	UIK	SGC	CR2	8400
 --PG0002	SGC	UIK	CR2	8400
@@ -287,7 +285,7 @@ SELECT DISTINCT
     book_ref,
     parseDateTime64BestEffort(book_date) as book_date,
     toString(total_amount)
-FROM startde.bookings_json;
+FROM bookings_json;
 
 
 --Загрузка в tickets_raw
@@ -302,7 +300,7 @@ FROM (
     SELECT 
         book_ref,
         ticket_data
-    FROM startde.bookings_json
+    FROM bookings_json
     ARRAY JOIN JSONExtractArrayRaw(json_data) as ticket_data
 );
 
@@ -317,7 +315,7 @@ FROM (
     SELECT 
         JSONExtractString(ticket_data, 'ticket_no') as ticket_no,
         JSONExtractString(ticket_data, 'flights') as flights_json
-    FROM startde.bookings_json
+    FROM bookings_json
     ARRAY JOIN JSONExtractArrayRaw(json_data) as ticket_data
 ) AS tickets_with_flights
 ARRAY JOIN JSONExtractArrayRaw(flights_json) as flight_data;
@@ -523,9 +521,9 @@ SELECT
     w_arr.wind_speed as arrival_wind_speed,
     w_arr.condition as arrival_condition
 FROM vj_volov_fct_flights_mart fm
-LEFT ASOF JOIN startde.weather_data_hourly w_dep
+LEFT ASOF JOIN weather_data_hourly w_dep
     ON (fm.departure_airport = w_dep.airport AND fm.actual_departure >= w_dep.timestamp)
-LEFT ASOF JOIN startde.weather_data_hourly w_arr
+LEFT ASOF JOIN weather_data_hourly w_arr
     ON (fm.arrival_airport = w_arr.airport AND fm.actual_arrival >= w_arr.timestamp)
 WHERE fm.status = 'Arrived'
   AND fm.actual_departure IS NOT NULL 
