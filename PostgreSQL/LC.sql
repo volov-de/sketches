@@ -12,10 +12,18 @@ LEFT JOIN Address AS a1 ON p1.personId = a1.personId
 
 SELECT (
     SELECT
-        e1.salary 
+        distinct(salary)
     FROM 
         Employee as e1
     ORDER BY e1.salary DESC
     LIMIT 1
     OFFSET 1
     ) as SecondHighestSalary
+
+--178. Rank Scores
+
+SELECT
+    score,
+    dense_rank() OVER (ORDER BY score desc) as rank 
+FROM
+    Scores
