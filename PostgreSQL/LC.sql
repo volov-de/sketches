@@ -7,3 +7,15 @@ SELECT
     a1.state
 FROM Person AS p1
 LEFT JOIN Address AS a1 ON p1.personId = a1.personId
+
+--176. Second Highest Salary
+
+SELECT (
+    SELECT
+        e1.salary 
+    FROM 
+        Employee as e1
+    ORDER BY e1.salary DESC
+    LIMIT 1
+    OFFSET 1
+    ) as SecondHighestSalary
