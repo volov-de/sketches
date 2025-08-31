@@ -50,3 +50,10 @@ FROM
 JOIN  Employee as e2 ON e1.managerId = e2.id
 WHERE
     e1.salary > e2.salary and ae1.managerid is not null
+
+-- 182. Duplicate Emails
+
+SELECT email
+  FROM Person
+ GROUP BY email
+HAVING COUNT(1) > 1;
