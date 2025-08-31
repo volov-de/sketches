@@ -40,3 +40,13 @@ WITH t1 AS (
 SELECT distinct(num) AS ConsecutiveNums
 FROM t1
 WHERE num = prev_num AND num = next_num
+
+--181. Employees Earning More Than Their Managers
+
+SELECT
+    e1.name as Employee 
+FROM 
+    Employee as e1
+JOIN  Employee as e2 ON e1.managerId = e2.id
+WHERE
+    e1.salary > e2.salary and ae1.managerid is not null
