@@ -27,3 +27,16 @@ SELECT
     dense_rank() OVER (ORDER BY score desc) as rank 
 FROM
     Scores
+
+--180. Consecutive Numbers
+
+WITH t1 AS (
+  SELECT
+    num,
+    LAG(num) OVER (ORDER BY id) AS prev_num,
+    LEAD(num) OVER (ORDER BY id) AS next_num
+  FROM Logs
+)
+SELECT distinct(num) AS ConsecutiveNums
+FROM t1
+WHERE num = prev_num AND num = next_num
