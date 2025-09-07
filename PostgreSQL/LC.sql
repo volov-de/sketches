@@ -57,3 +57,14 @@ SELECT email
   FROM Person
  GROUP BY email
 HAVING COUNT(1) > 1;
+
+--183. Customers Who Never Order
+
+SELECT 
+    name as Customers
+FROM
+    Customers as c1
+LEFT JOIN
+    Orders as o2 ON c1.id = o2.customerId
+WHERE 
+    o2.id is null
