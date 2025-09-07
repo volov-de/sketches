@@ -68,3 +68,20 @@ LEFT JOIN
     Orders as o2 ON c1.id = o2.customerId
 WHERE 
     o2.id is null
+
+--184. Department Highest Salary
+
+WITH Rank AS (
+    SELECT
+        d2.name AS Department,
+        e1.name AS Employee,
+        e1.salary AS Salary,
+        RANK() OVER (PARTITION BY d2.name ORDER BY e1.salary DESC) AS Rank
+    FROM
+        Employee AS e1
+    JOIN 
+        Department AS d2 ON e1.departmentId = d2.id
+)
+SELECT Department, Employee, Salary
+FROM Rank
+WHERE Rank = 1;
