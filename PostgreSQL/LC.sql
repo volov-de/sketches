@@ -126,3 +126,15 @@ from
 join post p2 on p2.owner_id = p1.id
 GROUP By p1.id, p1.nickname
 HAVING count(*) > 10
+
+Найти пользователей, которые совершили заказы на товары из категории 'Electronics', с указанием общей суммы заказов по этой категории.
+
+SELECT u1.id as user_id
+    ,u1.name as user_name
+    ,sum (o1.quantity * p1.price) as total_order_value
+FROM users u1
+join orders o1 on o1.user_id = u1.id
+join products p1 on p1.id = o1.product_id
+join categories c1 on p1.category_id = c1.id
+WHERE c1.name = 'Electronics'
+GROUP BY u1.id ,u1.name
