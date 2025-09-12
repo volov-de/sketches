@@ -138,3 +138,15 @@ join products p1 on p1.id = o1.product_id
 join categories c1 on p1.category_id = c1.id
 WHERE c1.name = 'Electronics'
 GROUP BY u1.id ,u1.name
+
+У вас есть база данных, которая отслеживает проекты и сотрудников, назначенных на эти проекты. Вам необходимо проанализировать состав команд проектов, чтобы оценить средний уровень опыта.
+Поля в результирующей таблице: project_id, average_years.
+Округлите значения average_years до 2 знаков после запятой.
+
+SELECT 
+p1.project_id, 
+round (avg(experience_years),2) as average_years
+FROM
+employee e1
+join project p1 on e1.employee_id = p1.employee_id
+GROUP BY p1.project_id
