@@ -85,3 +85,33 @@ WITH Rank AS (
 SELECT Department, Employee, Salary
 FROM Rank
 WHERE Rank = 1;
+
+Найдите имена пилотов, которые в августе текущего года трижды летали в аэропорт "Шереметьево" в качестве второго пилота.
+
+SELECT p1.name
+FROM pilots p1
+join flights f1 on p1.pilot_id = f1.second_pilot_id
+where f1.destination = 'Шереметьево' AND EXTRACT(MONTH FROM f1.flight_dt) = 08
+GROUP BY p1.name
+HAVING COUNT(*) = 3
+
+Выведите имена всех пилотов старше 45 лет, которые выполняли полёты на пассажирских самолётах с вместимостью более 30 человек.
+
+select name
+from pilots p1
+join flights f1 on f1.first_pilot_id = p1.pilot_id or f1.second_pilot_id = p1.pilot_id
+join planes p2 on p2.plane_id = f1.plane_id
+where p2.cargo_flg = 0 and p1.age > 45 and p2.quantity > 30
+GROUP BY name
+
+Выведите 10 капитанов (first_pilot_id), совершивших наибольшее количество грузовых рейсов в 2022 году.
+Отсортируйте результат по убыванию числа полётов.
+
+SELECT pil.name
+from pilots as pil
+join flights as fli on pil.pilot_id = fli.first_pilot_id
+join planes as plan on fli.plane_id = plan.plane_id
+where plan.cargo_flg = 1 AND EXTRACT(YEAR FROM fli.flight_dt) = 2022
+GROUP BY pil.pilot_id, pil.name
+ORDER BY COUNT(*) DESC
+limit 10
