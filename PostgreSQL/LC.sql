@@ -115,3 +115,14 @@ where plan.cargo_flg = 1 AND EXTRACT(YEAR FROM fli.flight_dt) = 2022
 GROUP BY pil.pilot_id, pil.name
 ORDER BY COUNT(*) DESC
 limit 10
+
+Необходимо написать SQL-запрос, который возвращает всех пользователей, опубликовавших более 10 постов.
+
+select
+    p1.id,
+    p1.nickname
+from
+    profile p1
+join post p2 on p2.owner_id = p1.id
+GROUP By p1.id, p1.nickname
+HAVING count(*) > 10
