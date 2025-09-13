@@ -175,3 +175,26 @@ SELECT
 from users
 GROUP BY SPLIT_PART(email, '@', 2)
 order by 2 desc, 1 asc
+
+185 hard
+Руководители компании заинтересованы в том, чтобы узнать, кто зарабатывает больше всех в каждом отделе. 
+Высокооплачиваемый сотрудник отдела — это сотрудник, чья зарплата входит в тройку самых высоких зарплат в этом отделе.
+Напишите решение по поиску сотрудников с высокими доходами в каждом из отделов.
+Верните таблицу результатов в любом порядке .
+Формат результата показан в следующем примере.
+
+with cte as (select
+    d.name as Department
+    ,e.name as Employee
+    ,e.salary as Salary
+    ,DENSE_RANK() over (partition by d.name order by e.salary desc) as rank
+from Employee as e
+join Department as d on d.id = e.departmentId
+)
+select 
+    Department
+    ,Employee
+    ,Salary
+from cte
+where cte.rank <=3
+ORDER BY Employee asc
