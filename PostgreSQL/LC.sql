@@ -150,3 +150,18 @@ FROM
 employee e1
 join project p1 on e1.employee_id = p1.employee_id
 GROUP BY p1.project_id
+
+Выведите уникальные комбинации пользователя и id товара для всех покупок, совершенных пользователями до того, как их забанили. Результат отсортируйте в порядке возрастания сначала по имени пользователя, потом по SKU.
+Если пользователь не был забанен, учитываются все его покупки.
+Поля в результирующей таблице: user_id, first_name, last_name, sku.
+
+SELECT 
+    u1.id as user_id,
+    u1.first_name,
+    u1.last_name,
+    p1.sku
+FROM users u1
+JOIN purchases p1 ON u1.id = p1.user_id
+LEFT JOIN ban_list b1 ON u1.id = b1.user_id
+WHERE b1.date_from IS NULL OR p1.date < b1.date_from
+ORDER BY 2,4
