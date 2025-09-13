@@ -165,3 +165,13 @@ JOIN purchases p1 ON u1.id = p1.user_id
 LEFT JOIN ban_list b1 ON u1.id = b1.user_id
 WHERE b1.date_from IS NULL OR p1.date < b1.date_from
 ORDER BY 2,4
+
+Вывести в порядке убывания популярности доменные имена, используемые пользователями для электронной почты. 
+Полученный результат необходимо дополнительно отсортировать по возрастанию названий доменных имён.
+
+SELECT
+    SPLIT_PART(email, '@', 2) as domain,
+    count(1) as count
+from users
+GROUP BY SPLIT_PART(email, '@', 2)
+order by 2 desc, 1 asc
