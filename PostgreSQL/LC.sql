@@ -198,3 +198,16 @@ select
 from cte
 where cte.rank <=3
 ORDER BY Employee asc
+
+550 Med 
+Напишите решение, округляющее долю игроков, вошедших в игру повторно на следующий день после первого входа, до двух знаков после запятой. 
+Другими словами, вам нужно определить количество игроков, вошедших в игру на следующий день после первого входа, и разделить это число на общее количество игроков.
+
+SELECT 
+    ROUND(CAST(SUM(CASE WHEN event_date = first_date + 1 THEN 1 ELSE 0 END) AS NUMERIC)
+        /COUNT(DISTINCT player_id),2) AS fraction
+FROM (SELECT 
+        player_id,
+        event_date,
+        MIN(event_date) OVER (PARTITION BY player_id) AS first_date
+    FROM Activity)
