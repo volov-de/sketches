@@ -211,3 +211,29 @@ FROM (SELECT
         event_date,
         MIN(event_date) OVER (PARTITION BY player_id) AS first_date
     FROM Activity)
+
+262 hard
+Коэффициент отмен рассчитывается путем деления количества отмененных (клиентом или водителем) запросов с незаблокированными пользователями 
+на общее количество запросов с незаблокированными пользователями в этот день.
+Напишите решение для поиска частоты отмен запросов с незабаненными пользователями ( и клиент, и водитель не должны быть забанены ) 
+в день между "2013-10-01"и "2013-10-03"при наличии хотя бы одной поездки. Округлите Cancellation Rateдо двух знаков после запятой.
+Верните таблицу результатов в любом порядке .
+
+WITH cte AS (
+    SELECT 
+        request_at,
+        COUNT(*) AS total,
+        COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed
+    FROM Trips AS t
+    WHERE client_id NOT IN (SELECT users_id FROM Users WHERE banned = 'Yes')
+      AND driver_id NOT IN (SELECT users_id FROM Users WHERE banned = 'Yes')
+      AND request_at BETWEEN '2013-10-01' AND '2013-10-03'
+    GROUP BY request_at
+)
+SELECT 
+    request_at AS Day,
+    ROUND(CASE WHEN total = 0 THEN 0.0
+        ELSE CAST((total - completed) AS NUMERIC) / total
+        END,2) AS "Cancellation Rate"
+FROM cte
+ORDER BY request_at ASC;
