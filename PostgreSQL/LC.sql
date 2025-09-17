@@ -237,3 +237,12 @@ SELECT
         END,2) AS "Cancellation Rate"
 FROM cte
 ORDER BY request_at ASC;
+
+197. Rising Temperature
+Напишите решение для поиска всех дат idс более высокими температурами по сравнению с предыдущими датами (вчера).
+
+SELECT w1.id
+FROM Weather w1
+JOIN Weather w2
+  ON w1.recordDate = w2.recordDate + INTERVAL '1 day'
+WHERE w1.temperature > w2.temperature;
