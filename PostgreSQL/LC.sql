@@ -266,3 +266,17 @@ SELECT DISTINCT
     , min(event_date) OVER (PARTITION BY player_id) AS first_login
 FROM
     Activity
+
+570 Med
+Напишите решение, чтобы найти менеджеров с не менее чем пятью прямыми отчетами.
+
+WITH CTE AS (SELECT e.id, e.name, e.department, e.managerId,
+       COUNT(r.id) AS numReports
+FROM Employee e
+LEFT JOIN Employee r ON e.id = r.managerId
+GROUP BY e.id, e.name, e.department, e.managerId
+)
+
+SELECT name
+FROM CTE
+WHERE numReports >=5
