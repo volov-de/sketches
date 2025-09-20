@@ -256,3 +256,13 @@ FROM Weather w1
 JOIN Weather w2
   ON w1.recordDate = w2.recordDate + INTERVAL '1 day'
 WHERE w1.temperature > w2.temperature;
+
+511.
+Напишите решение для нахождения даты первого входа каждого игрока.
+Верните таблицу результатов в любом порядке .
+
+SELECT DISTINCT
+    player_id
+    , min(event_date) OVER (PARTITION BY player_id) AS first_login
+FROM
+    Activity
