@@ -211,3 +211,13 @@ FROM (SELECT
         event_date,
         MIN(event_date) OVER (PARTITION BY player_id) AS first_date
     FROM Activity)
+
+511 ez
+Напишите решение для нахождения даты первого входа каждого игрока.
+Верните таблицу результатов в любом порядке .
+
+SELECT DISTINCT
+    player_id
+    , min(event_date) OVER (PARTITION BY player_id) AS first_login
+FROM
+    Activity
